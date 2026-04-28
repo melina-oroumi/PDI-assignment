@@ -286,7 +286,7 @@ METHOD isValidTimestamp(day, month, year, hour, minute)
         RETURN FALSE
     END IF
 
-    IF hour < 0 OR house > 23 THEN
+    IF hour < 0 OR hour > 23 THEN
         RETURN FALSE
     END IF
 

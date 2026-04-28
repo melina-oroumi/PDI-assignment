@@ -196,7 +196,81 @@ public class GreenhouseMonitoringSystem
         }
         catch(NumberFormatException e)
         {
-            output("Invalid row skipped: numeric conversione error");
+            output("Invalid row skipped: numeric conversion error");
         }
+    }
+
+    private static boolean isValidSensorType(String sensorType)
+    {
+        return sensorType.equals("temperature")
+            || sensorType.equals("humidity")
+            || sensorType.equals("soilMoisture")
+            || sensorType.equals("light");
+    }
+
+    private static boolean isValidTimeStamp(int day, int month, int year, int hour, int minute)
+    {
+        if(day < 1 || day > 31)
+        {
+            return false;
+        }
+
+        if(month < 1 || month > 12)
+        {
+            return false;
+        }
+
+        if(year < 0)
+        {
+            return false;
+        }
+
+        if(hour < 0 || hour > 23)
+        {
+            return false;
+        }
+
+        if(minute < 0 || minute > 59)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static int getValidIntegerInput(String prompt, int minimum, inr maximum) throws IOException
+    {
+        int number = 0;
+        boolean valid = false;
+
+        while(!valid)
+        {
+            System.out.rpint(prompt)
+
+            try
+            {
+                number = Integer.parseInt(console.readLine());
+
+                if(number >= minimum && number <= maximum)
+                {
+                    valid = true;
+                }
+                else
+                {
+                    System.out.println("Invalid input. Enter a number from " + minimum + " to " + maximum);
+                }
+            }
+            catch(NumberFormatException e)
+            {
+                System.out.println("Invalid input. Please enter a whole number");
+            }
+        }
+
+        return number;
+    }
+
+    private static double getValidDoubleInput(String prompt) throws IOException
+    {
+        
     }
 }
