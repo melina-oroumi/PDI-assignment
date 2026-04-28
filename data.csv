@@ -1,0 +1,5 @@
+day,month,year,hour,minute,sensorID,sensorType,zone,value
+12,3,2024,14,30,TMP332,temperature,ZoneA,27.4
+12,3,2024,14,30,HMD221,humidity,ZoneB,61.2
+12,3,2024,14,30,SOIL88,soilMoisture,ZoneA,42.0
+12,3,2024,14,30,LGT901,light,ZoneC,880
