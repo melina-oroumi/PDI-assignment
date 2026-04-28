@@ -1,0 +1,811 @@
+## Constants
+
+CONSTANT MAX_READINGS = 10000
+
+CONSTANT MIN_TEMPERATURE = 18
+CONSTANT MAX_TEMPERATURE = 30
+
+CONSTANT MIN_HUMIDITY = 40
+CONSTANT MAX_HUMIDITY = 70
+
+CONSTANT MIN_SOIL_MOISTURE = 30
+CONSTANT MAX_SOIL_MOISTURE = 60
+
+CONTSANT MIN_LIGHT = 300
+CONSTANT MAX_LIGHT = 1200
+
+## Class: Timestamp
+
+CLASS Timestamp
+
+    PRIVATE dayOfMoth AS INTEGER
+    PRIVATE monthOfYear AS INTEGER
+    PRIVATE year AS INTEGER
+    PRIVATE hour AS INTEGER
+    PRIVATE minute AS INTEGER
+
+    DEFEAULT CONSTRUCTOR
+        SET dayOfMonth TO 1
+        SET monthOfYear TO 1
+        SET year TO 2000
+        SET hour TO 0
+        SET minute TO 0
+    END CONSTRUCTOR
+
+    ALTERNATE CONSTRUCTOR WITH day, month, yearValue, hourValue, minuteValue
+        SET dayOfMoth TO day
+        SET monthOfYear TO month
+        SET year TO yearValue
+        SET hour TO hourValue
+        SET minute TO minuteValue
+    END CONSTRUCTOR
+
+    COPY CONSTRUCTOR WITH otherTimestamp
+        SET dayOfMonth TO otherTimestamp.getDayOfMonth()
+        SET monthOfYear TO otherTimestamp.getMonthOfYear()
+        SET year TO otherTimestamp.getYear()
+        SET hour TO otherTimestamp.getHour()
+        SET minute TO otherTimestamp.getMinute()
+    END CONSTRUCTOR
+
+    METHOD getDayOfMonth()
+        RETURN dayOfMonth
+    END METHOD
+
+    METHOD getMonthOfYear()
+        RETURN monthOfYear
+    END METHOD
+
+    METHOD getYear()
+        RETURN year
+    END METHOD
+
+    METHOD getHour()
+        RETURN hour
+    END METHOD
+
+    METHOD getMinute()
+        RETURN minute
+    END METHOD
+
+    METHOD setDayOfMonth(day)
+        SET dayOfMonth TO day
+    END METHOD
+
+    METHOD setMonthOfYear(month)
+        SET monthOfYear TO month
+    END METHOD
+
+    METHOD setYear(yearValue)
+        SET year TO yearValuu
+    END METHOD
+
+    METHOD setHour(hourValue)
+        SET hour TO hourValue
+    END METHOD
+
+    METHOD setMinute(minuteValue)
+        SET minute TO minuteValue
+    END METHOD
+
+    METHOD toString()
+        RETURN dayOfMonth + "/" + monthOfYear + "/" + year + " " + hour + ":" + minute
+    END METHOD
+
+END CLASS
+
+
+## Class: SensorReading
+
+CLASS SensorReading
+
+    PRIVATE sensorID AS STRING
+    PRIVATE sensorType AS STRING
+    PRIVATE zone AS STRING
+    PRIVATE value AS REAL
+    PRIVATE timestamp AS Timestamp
+
+    DEFAULT CONSTRUCTOR
+        SET sensorID TO "UNKNOWN"
+        SET sensorType TO "temperature"
+        SET zone TO "UNKNOWN"
+        SET value TO 0.0
+        SET timestamp TO new Timestamp()
+    END CONSTRUCTOR
+
+    ALTERNATE CONTRUCTOR WITH id, type, zoneName, readingVlaue, time
+        SET sensorID TO id
+        SET sensorType TO type
+        SET zone TO zoneName
+        SET value TO readingValue
+        SET timestamp TO new Timestamp(time)
+    END CONSTRUCTOR
+
+    METHOD getSensorID()
+        RETURN sensorID
+    END METHOD
+
+    METHOD getSensorType()
+        RETURN sensorType
+    END METHOD
+
+    METHOD  getZone()
+        RETURN zone
+    END METHOD
+
+    METHOD getValue()
+        RETURN value
+    END METHOD
+
+    METHOD getTimestamp()
+        RETURN timestamp
+    END METHOD
+
+    METHOD setSensorID(id)
+        SET sensorID TO id
+    END METHOD
+
+    METHOD setSensorType(type)
+        SET sensorType TO type
+    END METHOD
+
+    METHOD setZone(zoneName)
+        SET zone TO zoneName
+    END METHOD
+
+    METHOD setValue(readingValue)
+        SET value TO readingValue
+    END METHOD
+
+    METHOD setTimestamp(time)
+        SET timestamp TO new Timestamp(time)
+    END METHOD
+
+    METHOD toString()
+        RETURN timestamp + ", " + sensorID + ", " + sensorType + ", " + zone + ", " + value
+    END METHOD
+
+END CLASS
+
+
+## Main Menu
+
+METHOD displayMainMenu()
+
+    DISPLAY "Welcome to the Smart Greenhouse Monitoring System!"
+    DISPLAY "Please select an option:"
+    DISPLAY "1. Statistics for the entire greenhouse"
+    DISPLAY "2. Statistics by zone"
+    DISPLAY "3. Statistics by sensor type"
+    DISPLAY "4. Add data readings"
+    DISPLAY "5. Delete data readings"
+    DISPLAY "6. Exit program"
+
+END METHOD
+
+
+## Statistics Submenu
+
+METHOD displayStatisticsMetnu()
+
+    DISPLAY "Select a statistic:"
+    DISPLAY "1. Total number of readings"
+    DISPLAY "2. Average value"
+    DISPLAY "3. Minimum value"
+    DISPLAY "4. Maximum value"
+    DISPLAY "5. Number of readings outside of safe range"
+    DISPLAY "6. Percentage of readings outside of safe range"
+    DISPLAY "7. All statistics"
+
+END METHOD
+
+
+# File Loading
+
+MTHOD loadDataFromCSV(reading, readingCount)
+
+    DECALRE file AS FILE
+    DECLARE line AS STRING
+    DECLARE parts AS ARRAY OF STRINGS
+
+    TRY
+        OPEN "greenhouse_readings.csv" for reading
+
+        READ first line and ignore it because it is the header
+
+        WHILE there is another line in the file AND readingCount < MAX_READINGS
+
+            READ line from file
+            SPLIT line by comma INTO parts
+
+            IF parts has exactly 9 values THEN
+
+                IF row data is valid THEN
+
+                    SET day TO integer value of parts[0]
+                    SET month TO integer value of parts[1]
+                    SET year TO integer vlaue of parts[2]
+                    SET hour TO integer value of parts[3]
+                    SET minute TO integer value of parts[4]
+                    SET sensorID TO parts[5]
+                    SET sensorType TO parts[6]
+                    SET zone TO parts[7]
+                    SET value TO real value of parts[8]
+
+                    CREATE timestamp USING, day, month, year, hour, minute
+                    CREATE sensorReading USING sensorID, sensorType, zone, value, timestamp
+
+                    SET readings[readingCount] TO sensorReading
+                    INCREMENT readingCount
+
+                ELSE
+                    DISPLAY "Invalid row skipped."
+                    WRITE "Invalid row skipped" TO log file
+                END IF
+
+            ELSE
+                DISPLAY "Incorrect number of columns; row skipped"
+                WRITE "Incorrect number of columns; row skipped" TO log file
+            END IF
+
+        END WHILE
+
+        CLOSE file
+
+    CATCH file loading error
+        DISPLAY "Error: Could not load CSV file"
+        WRITE "Error: Could not load CSV file" to log file
+
+
+## Data Validation
+
+METHOD isValidSensorType(sensorTpe)
+
+    IF sensorType = "temperature" OR
+       sensorType = "humidity" OR
+       sensorType = "soilMoisture" OR
+       sensorType = "light" THEN
+        RETURN TRUE
+    ELSE
+        RETURN FALSE
+    END IF
+
+END METHOD
+
+METHOD isValidTimestamp(day, month, year, hour, minute)
+
+    IF day < 1 OR day > 31 THEN
+        RETURN FALSE
+    END IF
+
+    IF month < 1 OR month > 12 THEN
+        RETURN FALSE
+    END IF
+
+    IF year < 0 THEN
+        RETURN FALSE
+    END IF
+
+    IF hour < 0 OR house > 23 THEN
+        RETURN FALSE
+    END IF
+
+    IF minute < 0 OR minute > 59 THEN
+        RETURN FALSE
+    END IF
+
+    RETURN TRUE
+
+END METHOD
+
+METHOD getValidIntegerInput(prompt, minimum, maximum)
+
+    DECLARE input AS INTEGER
+    DECLARE valid AS BOOLEAN
+
+    SET valid TO FALSE
+
+    WHILE valid = FALE
+        DISPLAY prompt
+        READ input
+
+        IF input is an integer AND input >= minimum AND input <= maximum THEN
+            SET valid TO TRUE
+        ELSE
+            DISPLAY "Invalid input; try again"
+        END IF
+    END WHILE
+
+    RETURN input
+
+END METHOD
+
+
+## Entire Greenhouse Statistics
+
+METHOD handleEntireGreenhouseStatistics(readings, readingCount)
+
+    CALL displayStatisticsMenu()
+    SET statisticsChoice TO getValidIntegerInput("Enter statistics choise: ", 1, 7)
+
+    CALL performStatistics(readings,readingCount, "ALL", "ALL", statisticsChoice)
+
+END METHOD
+
+
+## Zone Statistics
+
+METHOD handleZoneStatistics(readings, readingCount)
+
+    DISPLAY "Enter zone name:"
+    READ selectedZone
+
+    IF zone exists in readings THEN
+        CALL displayStatisticMenu()
+        SET statisticChoice TO getValidIntegerInput("Enter statistic choice: ", 1, 7)
+
+        CALL performStatistics(readings, readingCount, selectedZone, "ALL", statisticChoice)
+    ELSE
+        DISPLAY "Invalid zone selected"
+        WRITE "Invalid zone selected" TO log file
+    END IF
+
+END METHOD
+
+
+## Sensor Type Statistics
+
+METHOD handleSensorTypeStatistics(readings, readingCount)
+
+    DISPLAY "Enter sensor type:"
+    READ selectedSensorType
+
+    IF isValidSensorType(selectedSensorType) THEN
+        CALL displayStatisticMenu()
+        SET statisticChoice TO getValidIntegerInput("Enter statistic choice: ", 1, 7)
+
+        CALL performStatistics(readings, readingCount, "ALL", selectedSensorType, statisticChoice)
+    ELSE
+        DISPLAY "Invalid sensor type selected"
+        WRITE "Invalid type selected" TO log file
+    END IF
+
+END METHOD
+
+
+## Check Whether Reading Matches Filter
+
+METHOD matchesFilter(reading, selectedZone, selectedSensorType)
+
+    SET zoneMatches TO FALSE
+    SET typeMatches TO FALSE
+
+    IF selectedZone = "ALL" OR reading.getZone() = selectedZone THEN
+        SET zoneMatches TO TRUE
+    END IF
+
+    IF zoneMatches = TUE AND typeMatches = TRUE THEN
+        RETURN TRUE
+    ELSE
+        RETURN FALSE
+    END IF
+
+END METHOD
+
+
+## Statistical Calculations
+
+METHOD performStatistics(readings, readingCount, selectedZone, selectedSensorType, statisticChoice)
+
+    IF statisticChoice = 1 THEN
+        SET result TO calculateTotalReadings(reading, readingCount, selectedZone, selectedSensorType)
+        DISPLAY result
+        WRITE result TO log file
+
+    ELSE IF statisticChoice = 2 THEN
+        SET result TO calculateAverage(reading, readingCount, selectedZone, selectedSensorType)
+        DISPLAY result
+        WRITE result TO log file
+
+    ELSE IF statisticChoice = 3 THEN
+        SET result TO calculateMinimum(reading, readingCount, selectedZone, selectedSensorType)
+        DISPLAY result
+        WRITE result TO log file
+
+    ELSE IF statisticChoice = 4 THEN
+        SET result TO calculateMaximum(reading, readingCount, selectedZone, selectedSensorType)
+        DISPLAY result
+        WRITE result TO log file
+
+    ELSE IF statisticChoice = 5 THEN
+        SET result TO calculateOutsideSafeRangeCount(reading, readingCount, selectedZone, selectedSensorType)
+        DISPLAY result
+        WRITE result TO log file
+
+    ELSE IF statisticChoice = 6 THEN
+        SET result TO caclculateOutsideSafeRangePercentage(reading, readingCount, selectedZone, selectedSensorType)
+        DISPLAY result
+        WRITE result TO log file
+
+    ELSE IF statisticChoice = 7 THEN
+        DISPLAY and WRITE all statistics
+    END IF
+
+END METHOD
+        
+
+## Total Readings
+
+METHOD caluclateTotalReadings (readings, readingCount, selectedZone, selectedSensorType)
+
+    DECLARE total AS INTEGER
+    SET total TO 0
+
+    FOR i FROM 0 TO readingCount - 1
+        IF matchesFilter(readings[i], selectedZone, selectedSensorType) THEN
+            INCREMENT total
+        END IF
+    END FOR
+
+    RETURN total
+
+END METHOD
+
+
+## Average Value
+
+METHOD calculateAverage(readings, readingCount, selectedZone, selectedSensorType)
+
+    DECLARE total AS REAL
+    DECLARE count AS INTEGER
+
+    SET total TO 0
+    SET count TO 0
+
+    FOR i FROM 0 TO readingCount - 1
+        IF matchesFilter(readings[i], selectedZone, selectedSensorType) THEN
+            SET total TO total + readings[i].getValue()
+            INCREMENT count
+        END IF
+    END FOR
+
+    IF count = 0 THEN
+        RETURN 0
+    ELSE
+        RETURN totaal / count
+        END IF
+
+END METHOD
+
+
+## Minimum Value
+
+METHOD calculateMinimum(readings, readingCount, selectedZone, selectedSensorType)
+
+    DECLARE minimum AS REAL
+    DECLARE found AS BOOLEAN
+
+    SET found TO FALSE
+
+    FOR i FROM 0 TO readingCount - 1
+        IF matchesFilter(readings[i], selectedZone, selectedSensorType) THEN
+
+            IF found = FALSE THEN
+                SET minimum TO readings[i].getValue()
+                SET found to TRUE
+            ELSE IF readings[i].getValue < minimum THEN
+                SET minimum TO readings[i].getValue()
+            ENDIF
+
+        END IF
+    END FOR
+
+    IF found = FALSE THEN
+        RETURN 0
+    ELSE
+        RETURN minimum
+    END IF
+
+END METHOD
+
+
+## Maximum Value
+
+METHOD calculateMaximum(readings, readingCount, selectedZone, selectedSensorType)
+
+    DECLARE maximum AS REAL
+    DECLARE found AS BOOLEAN
+
+    SET found TO FALSE
+
+    FOR i FROM 0 TO readingCount - 1
+        IF matchesFilter(readings[i], selectedZone, selectedSensorType) THEN
+
+            IF found = FALSE THEN
+                SET maximum TO readings[i].getValue()
+                SET found to TRUE
+            ELSE IF readings[i].getValue > maximum THEN
+                SET maximum TO readings[i].getValue()
+            ENDIF
+
+        END IF
+    END FOR
+
+    IF found = FALSE THEN
+        RETURN 0
+    ELSE
+        RETURN maximum
+    END IF
+
+END METHOD
+
+
+## Safe Range Logic
+
+METHOD isOutsideSafeRange(readings)
+
+    SET type TO reading.getSensorType()
+    SET value TO reading.getValue()
+
+    IF type = "temperature" THEN
+        IF value < MIN_TEMPERATURE OR value > MAX_TEMPERATURE THEN
+            RETURN TRUE
+        END IF
+
+    ELSE IF type = "humidity" THEN
+        IF value < MIN_HUMIDITY OR value > MAX_HUMIDITY THEN
+            RETURN TRUE
+        END IF
+
+    ELSE IF type = "soilMoisture" THEN
+        IF value < MIN_SOIL_MOISTURE OR value > MAX_SOIL_MOISTURE THEN
+            RETURN TRUE
+        END IF
+
+    ELSE IF type = "light" THEN
+        IF value < MIN_LIGHT OR value > MAX_LIGHT TYHEN
+            RETURN TRUE
+        END IF
+    END IF
+
+    RETURN FALSE
+
+END METHOD
+
+
+## Number Outside Safe range
+
+METHOD calculateOutsideSafeRangeCount(readings, readingCount, selectedZone, selectedSensorType)
+
+    DECLARE count AS INTEGER
+    SET count TO 0
+
+    FOR i FROM 0 TO readingCount - 1
+        IF matchesFilter(readings[i], selectedZone, selectedSensorType) THEN
+            IF isOutsideSafeRange(readings[i]) THEN
+                INCREMENT count
+            END IF
+        END IF
+    END FOR
+
+    RETURN count
+
+END METHOD
+
+
+## Percentage Outside Safe Range
+
+METHOD calculateOutsideSafeRangePercentage(readings, readingCount, selectedZone, selectedSensorType)
+
+    SET total TO calculateTotalReadings(readings, readingCount, selectedZone, selectedSensorType)
+    SET outsideCount TO calculateOutsideSafeRangeCount(readings, readingCount, selectedZone, selectedSensorType)
+
+    IF total = 0 THEN
+        RETURN 0
+    ELSE
+        RETURN outsideCount / total * 100
+    END IF
+
+END METHOD
+
+
+## Add Data Reading
+
+METHOD addDataReading(readings, readingCount)
+
+    IF readingCount = MAX_READING THEN
+        DISPLAY "Cannot add reading; array is full"
+        WRITE "Cannot add reading; array is full" TO log file
+    ELSE
+        DISPLAY "Enter day:"
+        READ day
+
+        DISPLAY "Enter month:"
+        READ month
+
+        DISPLAY "Enter year:"
+        READ year
+
+        DISPLAY "Enter hour:"
+        READ hour
+
+        DISPLAY "Enter minute:"
+        READ minute
+
+        IF isValidTimeStamp(day, month, year, hour, minute = FALSE) THEN
+            DISPLAY "Invalid timestamp"
+            RETURN
+        END IF
+
+        DISPLAY "Enter sensor ID:"
+        READ sensorID
+
+        DISPLAY "Enter sensor type:"
+        READ sensorType
+
+        IF isValidSensorType(sensorType) = FALSE THEN
+            DISPLAY "Invalid sensor type"
+            RETURN
+        END IF
+
+        DISPLAY "Enter zone:"
+        READ zone
+
+        DISPLAY "Enter value:"
+        READ value
+
+        IF value is not numeric THEN
+            DISPLAY "Invalid value"
+            RETURN
+        END IF
+
+        CREATE timestamp USING day, month, year, hour, minute
+        CREATE newReading USING sensorID, sensorType, zone, value, timestamp
+
+        SET readings[readingCount] TO newReading
+        INCREMENT readingCount
+
+        DISPLAY "Reading added successfully"
+        WRITE "Reading added successfully" TO log file
+    END IF
+
+END METHOD
+
+
+# Delete Data Reading
+
+METHOD deleteDataReading(readings, readingCount)
+
+    DISPLAY "Enter sensor ID pf reading to delete:"
+    READ targetSensorID
+
+    DISPLAY "Enter day of reading to delete:"
+    READ targetDay
+
+    DISPLAY "Enter month of reading to delete:"
+    READ targetMonth
+
+    DISPLAY "Enter year of reading to delete:"
+    READ targetYear
+
+    SET foundIndex TO -1
+
+    FOR i FROM 0 TO -1
+        IF readings[i].getSensorID() = targetSensorID AND
+           readings[i].getTimeStamp().getDayOfMonth() = targetDay AND
+           readings[i].getTimeStamp().getMonthOfYear() = targetMonth AND
+           readsings[i].getTimeStamp().getYear() = targetYear THEN
+
+            SET foundIndex TO i
+        END IF
+    END FOR
+
+    IF foundIndex = -1 THEN
+        DISPLAY "Reading not found"
+        WRITE "Reading not found" TO log file
+    ELSE
+        FOR i FROM foundIndex TO readingCount - 2
+            SET readings[i] TO readings[i + 1]
+        END FOR
+
+        SET readings[readingCount - 1] TO null
+        DECREMENT reading Count
+
+        DISPLAY "Reading deleted successfully"
+        WRITE "Reading deleted succussfully" TO log file
+    END IF
+
+END METHOD
+
+
+## Zone Comparison Algorithm
+
+METHOD compareZones(readings, readingCount)
+    
+    DECLARE zones AS ARRAY OF STRING
+    DECLARE zoneCount AS INTEGER
+
+    SET zoneCount TO 0
+
+    FOR i FROM 0 TO readingCount - 1
+        IF readings[i].getZone is not already in zones THEN
+            SET zones[zoneCount] TO readings[i].getZone()
+            INCREMENT zoneCount
+        END IF
+    END FOR
+
+    FOR i FROM 0 TO zoneCount - 1
+        SET average TO calculateAverage(readings, readingCount, zones[i], "ALL")
+        SET outsidePercentage TO calculateOutsideSafeRangePercentage(readings, readingCountl zones[i], "ALL")
+
+        DISPLAY zones[i] + " average: " + avergae
+        DISPLAY zones[i] + " outside safe range percentages: " + outsidePercentage
+
+        WRITE same information TO log file
+    END FOR
+
+END METHOD
+
+
+## Sensor Type Algorithm
+
+METHOD compareSensorTypes(readings, readingCount)
+
+    DECLARE sensorTypes AS ARRAY OF STRING
+    SET sensorTypes[0] TO "temperature"
+    SET sensorTypes[1] TO "humidity"
+    SET sensorTypes[2] TO "soilMoisture"
+    SET sensorTypes[3] TO "light"
+
+    FOR i FROM 0 TO 3
+        SET average TO calculateAverage(readings, readingCount, "ALL", sensorTypes[i])
+        SET outsidePercentage TO calculate OutsideSafeRangePercentage(readings, readingCount, "ALL", sensorTypes[i])
+
+        DISPLAY sensorTypes[i] + " average: " + average
+        DISPLAY sensorTypes[i] + " outside safe range percentage: "
+
+        WRITE same information TO log file
+    END FOR
+
+END METHOD
+
+
+## Main Program
+
+BEGIN SmartGreenhouseProgram
+
+    DECLARE readings AS ARRAY OF SensorReading WITH SIZE MAX_READING
+    DECLARE readingCount AS INTEGER
+    DECLARE choice AS INTEGER
+    DECLARE logFile AS FILE
+
+    SET readingCount TO 0
+
+    OPEN log file for writing
+
+    CALL loadDataFromCSV(readings, readingCount)
+
+    REPEAT
+        CALL displayMainMenu()
+        SET choice TO getValidIntegerInput("Enter choice: ", 1, 6)
+
+        IF choice = 1 THEN
+            CALL handleEntireGreenhouseStatistic(readings, readingCount)
+        ELSE IF choice = 2 THEN
+            CALL handleZoneStatistics(reading, readingCount)
+        ELSE IF choice = 3 THEN
+            CALL handleSensorTypeStatistics(readings, readingCount)
+        ELSE IF choice = 4 THEN
+            CALL addDataReading(readings, readingCount)
+        ELSE IF choice = 5 THEN
+            CALL deleteDataReading(readings, readingCount)
+        ELSE IF choice = 6 THEN
+            DISPLAY "Exiting program"
+            WRITE "Exiting program" TO log file
+        END IF
+
+    UNTIL choice = 6
+
+    CLOSE log file
+
+END SmartGreenhouseProgram
