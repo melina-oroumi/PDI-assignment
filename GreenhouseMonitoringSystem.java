@@ -271,6 +271,369 @@ public class GreenhouseMonitoringSystem
 
     private static double getValidDoubleInput(String prompt) throws IOException
     {
-        
+        double number = 0.0;
+        boolean valid = false;
+
+        while(!valid)
+        {
+            System.out.print(prompt);
+
+            try{
+                number = Double.parseDouble(console.readLine());
+                valid = true;
+            }
+            catch(NumberFormatException e)
+            {
+                System.out.println("Invalid input; please enter a numeric value");
+            }
+        }
+
+        return number;
+    }
+
+    private static String getNonEmptyStringInput(String prompt) throws IOException
+    {
+        String input = "";
+
+        while(input.trim().lenght() == 0)
+        {
+            System.out.print(prompt);
+            input = console.readLine();
+
+            if(input.trim().length() == 0)
+            {
+                System.out.println("Input cannot be empty");
+            }
+        }
+
+        return input.trim();
+    }
+
+    private static void handleEntireGreenhouseStatistics() throws IOException
+    {
+        displayStatisticsMenu();
+        int statisticChoice = getValidIntegerInput("Enter statistic choice ", 1, 7);
+        performStatistics("ALL", "ALL", statisticChoice);
+    }
+
+    private static void handleZoneStatistics() throws IOException
+    {
+        String selectedZone = getNonEmptyStringInput("Enter zone name: ");
+
+        if(zoneExists(selectedZone))
+        {
+            displayStatisticsMenu();
+            int statisticChoice = getValidIntegerInput("Enter statistic choice: ", 1, 7);
+            performStatistics(selectedZone, "ALL", statisticChoice);
+        }
+        else
+        {
+            output("Invalid zone selected.");
+        }
+    }
+
+    private static void handleSensorTypeStatistics() throws IOException
+    {
+        String selectedSensorType = getNonEmptyStringInput("Enter sensor type: ");
+
+        if(isValidSensorType(selectedSensorType))
+        {
+            displayStatisticsMenu();
+            int statisticChoice = getValidIntegerInput("Enter statistic choice: ", 1, 7);
+            performStatistics("ALL", selectedSensorType, statisticChoice);
+        }
+        else
+        {
+            output("Invalid sensor type selected");
+        }
+    }
+
+    private static boolean zoneExists(String selectedZone)
+    {
+        int i;
+
+        for(i = 0; i < readingCount; i++)
+        {
+            if(readings[i].getZone().equals(selectedZone))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean matchesFilter(SensorReading reading, String selectedZone, String selectedSensorType)
+    {
+        boolean zoneMatches = false;
+        boolean typeMatches = false;
+
+        if(selectedZone.equals("ALL") || reading.getZone().equals(selectedZone))
+        {
+            zoneMatches = true;
+        }
+
+        if(selectedSensorType.equals("ALL") || reading.getSensorType().equals(selectedSensorType))
+        {
+            typeMatches = true;
+        }
+
+        return zoneMatches && typeMatches;
+    }
+
+    private static void performStatistics(String selectedZone, String selectedSensorType, int statisticChoice)
+    {
+        if(statisticChoice == 1)
+        {
+            output("Total number of readings: " + calculateTotalReadings(selectedZone, selectedSensorType));
+        }
+        else if(statisticChoice == 2)
+        {
+            output("Average value: " + calculateAverage(selectedZone, selectedSensorType));
+        }
+        else if(statisticChoice == 3)
+        {
+            output("Minimum value: " + calculateMinimum(selectedZone, selectedSensorType));
+        }
+        else if(statisticChoice == 4)
+        {
+            output("Maximum value: " + calculateMaximum(selectedZone, selectedSensorType));
+        }
+        else if(statisticChoice == 5)
+        {
+            output("Number of readings outside safe range: " + calculateOutsideSafeRangeCount(selectedZone, selectedSensorType));
+        }
+        else if(statisticChoice == 6)
+        {
+            output("Percentage of readings outside rafe range: " + calculateOutsideSafeRangePercentage(selectedZone, selectedSensorType) + "%");
+        }
+        else is(statisticChoice == 7)
+        {
+            output("Total number of readings: " + calculateTotalReadings(selectedZone, selectedSensorType));
+            output("Average value: " + calculateAverage(selectedZone, selectedSensorType));
+            output("Minimum value: " + calculateMinimum(selectedZone, selectedSensorType));
+            output("Maximum value: " + calculateMaximum(selectedZone, selectedSensorType));
+            output("Number of readings outside safe range: " + calculateOutsideSafeRangeCount(selectedZone, selectedSensorType));
+            output("Percentage of readings outside safe range: " + calculateOutsideSafeRangePercentage(selectedZone, selectedSensorType) + "%");
+        }
+    }
+
+    private static int calculateTotalReadings(String selectedZone, String selectedSensorType)
+    {
+        int total = 0;
+        int i;
+
+        for(i = 0; i < readingCount; i++)
+        {
+            if(matchesFilter(readings[i], selectedZone, selectedSensorType))
+            {
+                total++;
+            }
+        }
+
+        return total;
+    }
+
+    private static double calculateAverage(String selectedZone, String selectedSensorType)
+    {
+        double total = 0.0;
+        int count = 0;
+        int i;
+
+        for(i = 0; i < readingCount; i++)
+        {
+            if(matchesFilter(readings[i], selectedZone, selectedSensorType))
+            {
+                total = total + readings[i].getValue();
+                count++;
+            }
+        }
+
+        if(count == 0)
+        {
+            return 0.0;
+        }
+        return total / count;
+    }
+
+    private static double calculateMinimum(String selectedZone, String selectedSensorType)
+    {
+        double minimum = 0.0;
+        boolean found = false;
+        int i;
+
+        for(i = 0; i < readingCount; i++)
+        {
+            if(matchesFilter(readings[i], selectedZone, selectedSensorType))
+            {
+                if(!found)
+                {
+                    minimum = readings[i].getValue();
+                    found = true;
+                }
+                else if(readings[i].getValue() < minimum)
+                {
+                    minimum = readings[i].getValue();
+                }
+            }
+        }
+
+        return minimum;
+    }
+
+    private staic double calculateMaximum(String selectedZone, String selectedSensorType)
+    {
+        double maximum = 0.0;
+        boolean found = false;
+        int i;
+
+        for(i = 0; i < readingCount; i++)
+        {
+            if(matchesFilter(readings[i], selectedZone, selectedSensorType))
+            {
+                if(!found)
+                {
+                    maximum = readings[i].getValue();
+                    found = true;
+                }
+                else if(readings[i].getValue() > maximum)
+                {
+                    maximum = readings[i].getValue();
+                }
+            }
+        }
+
+        return maximum;
+    }
+
+    private static boolean isOutsideSafeRange(SensorReading reading)
+    {
+        String type = reading.getSensorType();
+        double value = reading.getValue();
+
+        if(type.equals("temperature"))
+        {
+            return value < MIN_TEMP || value > MAX_TEMP;
+        }
+        else if(type.equals("humidity"))
+        {
+            return value < MIN_HUMIDITY || max > MAX_HUMIDITY;
+        }
+        else if(type.equals("soilMoisture"))
+        {
+            return value < MIN_SOIL_MOISTURE || max > MAX_SOIL_MOISTURE;
+        }
+        else if(type.equals("light"))
+        {
+            return value < MIN_LIGHT || max > MAX_LIGHT;
+        }
+
+        return false;
+    }
+
+    private static int calculateOutsideSafeRangeCount(String selectedZone, String selectedSensorType)
+    {
+        int count = 0;
+        int i;
+
+        for(i = 0; i < readingCount; i++)
+        {
+            if(matchesFilter(readings[i], selectedZone, selectedSensorType))
+            {
+                if(isOutsideSafeRange(readings[i]))
+                {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    private static double calculateOutsideSafeRangePercentage(String selectedZone, String selectedSensorType)
+    {
+        int total = calculateTotalReadings(selectedZone, selectedSensorType);
+        int outsideCount = calculateOutsideSafeRangeCount(selectedZone, selectedSensorType);
+
+        if(total == 0)
+        {
+            return 0.0;
+        }
+
+        return ((double) outsideCount / (double) total) * 100.0;
+    }
+
+    private static void addDataReading() throws IOException
+    {
+        if(readingCount == MAX_READINGS)
+        {
+            output("Cannot add reading; array is full");
+            return;
+        }
+
+        int day = getValidIntegerInput("Enter day: ", 1, 31);
+        int month = getValidIntegerInput("Enter month: ", 1, 12);
+        int year = getValidIntegerInput("Enter year: ", 0, 9999);
+        int hour = getValidIntegerInput("Enter hour: ", 0, 23);
+        int minute = getValidIntegerInput("Enter minute: ", 0, 59);
+
+        String sensorID = getNonEmptyStringInput("Enter sensor ID: ");
+        String sensorType = getNonEmptyStringInput("Enter sensor type: ");
+
+        while(!isValidSensorType(sensorType))
+        {
+            System.out.println("Invalid sensor type. Use temperature, humidity, soilMoisture, or light");
+            sensorType = getNonEmptyStringInput("Enter sensor type: ");
+        }
+
+        String zone = getNonEmptyStringInput("Enter zone: ");
+        double value = getValidDoubleInput("Enter value: ");
+
+        Timestamp timestamp = new Timestamp(day, month, year, hour, minute);
+        SensorReading newReading = new SensorReading(sensorID, sensorType, zone, value, timestamp);
+
+        readings[readingCount] = newReading;
+        readingCount++;
+
+        output("Reading added successfully.");
+    }
+
+    private static voice deleteDataReading() throws IOException
+    {
+        String targetSensorID = getNonEmptyStringInput("Enter sensor ID of reading to delete: ");
+        int targetDay = getValidIntegerInput("Enter day of reading to delete: ", 1, 31);
+        int targetMonth = getValidIntegerInput("Enter month of reading to delete: ", 1, 12);
+        int targetYear = getValidIntegerInput("Enter year of reading to delete: ", 0, 9999);
+
+        int foundIndex = -1;
+        int i;
+
+        for(i = 0; i < readingCount; i++)
+        {
+            if(readings[i].getSensorID().equals(targetSensorID)
+                && readings[i].getTimestamp().getDayOfMonth() == targetDay
+                && readings[i].getTimestamp().getMonthOfYear() == targetMonth
+                && readings[i].getTimestamp().getYear() == targetYear)
+            {
+                foundIndex == -1;
+            }
+        }
+
+        if(foundIndex == -1)
+        {
+            output("Reading not found");
+        }
+        else
+        {
+            for(i == foundIndex; i < readingCount - 1; i++)
+            {
+                readings[i] = readings[i +1];
+            }
+
+            readings[readingCount - 1] = null;
+            readingCount--;
+
+            output("Reading deleted successfully");
+        }
     }
 }
